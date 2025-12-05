@@ -1,5 +1,5 @@
-export type PaymentMethod = 'tarjeta'
-export type OrderStatus = 'pendiente'
+export type PaymentMethod = 'tarjeta' | 'yape' | 'plin';
+export type OrderStatus = 'pendiente' | 'en_proceso' | 'enviado' | 'entregado' | 'cancelado';
 
 export interface OrderItemRequest {
     product_id: number;
@@ -7,6 +7,7 @@ export interface OrderItemRequest {
     size: string;
     quantity: number;
     price: number;
+    name: string;
 }
 
 export interface CreateOrderRequest {

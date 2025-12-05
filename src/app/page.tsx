@@ -1,5 +1,6 @@
 import { getAllProducts } from '@/lib/product-service';
 import ProductCard from '@/components/products/ProductCard';
+import AddProductAccess from '@/components/products/AddProductAccess';
 
 export default async function Home() {
   // 1. Obtención de datos en el servidor
@@ -9,6 +10,8 @@ export default async function Home() {
       <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-10">
         Catálogo de Productos 👕
       </h1>
+      {/* Componente que verifica si es admin y muestra el botón de Crear Producto */} 
+      <AddProductAccess />
 
       {products.length === 0 ? (
         <div className="text-center py-20 bg-gray-50 rounded-lg">

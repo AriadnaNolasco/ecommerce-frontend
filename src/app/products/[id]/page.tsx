@@ -3,6 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ProductColor, ProductStock } from '@/types/product';
+import DeleteProductButton from '@/components/products/DeleteProductButton';
+import ProductForm from '@/components/products/ProductForm'; // Importar el formulario
+import { authService } from '@/lib/auth-service';
 
 interface ProductPageProps {
     params: {

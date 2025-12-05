@@ -6,6 +6,7 @@ import { authService } from '@/lib/auth-service';
 import { adminService } from '@/lib/admin-service';
 import { AdminUser, DashboardStats } from '@/types/admin';
 import Link from 'next/link';
+import { User } from '@/types/auth';
 
 // Hook simple para gestionar el estado de autenticación (Se puede mover a un archivo utils)
 const useAuth = () => {
@@ -145,7 +146,6 @@ export default function AdminPage() {
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2">Usuarios con cuenta activa</p>
                             </div>
-
                         </div>
                     </section>
 
@@ -168,9 +168,13 @@ export default function AdminPage() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {users.map((userItem) => (
-                                        <tr key={userItem.id} className={userItem.role === 'admin' ? 'bg-red-50/50' : ''}>
+                                        <tr key={userItem.id} className={userItem.role === 'admin' ? 'bg-red-50/50 hover:bg-red-100/50' : 'hover:bg-gray-50'}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{userItem.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{userItem.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                <Link href={`/admin/users/${userItem.id}`} className="text-indigo-600 hover:text-indigo-900 font-semibold">
+                                                    {userItem.name}
+                                                </Link>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{userItem.email}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-600 capitalize">{userItem.role}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -183,7 +187,7 @@ export default function AdminPage() {
                                                 {formatCurrency(parseFloat(userItem.total_spent))}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {/* Placeholder para la edición de usuario */}
+                                                {/* Enlace al detalle/edición */}
                                                 <Link href={`/admin/users/${userItem.id}`} className="text-indigo-600 hover:text-indigo-900">
                                                     Editar
                                                 </Link>
