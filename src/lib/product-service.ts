@@ -1,7 +1,6 @@
 import { ProductsResponse, Product } from '@/types/product';
 import { authenticatedClient } from './api-client';
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Re-declaración de interfaces para que sean exportadas individualmente

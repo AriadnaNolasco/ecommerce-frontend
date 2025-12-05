@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { authenticatedClient } from './api-client';
 import { CreateOrderRequest, CreateOrderResponse, MyOrdersResponse, OrderListItem } from '@/types/order';
 import { Order } from '@/types/order-detail';

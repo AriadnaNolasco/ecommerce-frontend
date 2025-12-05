@@ -5,6 +5,7 @@ import { authService } from '@/lib/auth-service';
 import { Product } from '@/types/product';
 import ProductForm from './ProductForm';
 import { User } from '@/types/auth';
+import DeleteProductButton from './DeleteProductButton';
 
 interface AdminEditWrapperProps {
     product: Product;

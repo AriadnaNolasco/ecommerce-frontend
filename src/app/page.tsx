@@ -1,16 +1,19 @@
-import { getAllProducts } from '@/lib/product-service';
+import { productService } from '@/lib/product-service';
 import ProductCard from '@/components/products/ProductCard';
 import AddProductAccess from '@/components/products/AddProductAccess';
+import { Product } from '@/types/product';
 
 export default async function Home() {
   // 1. Obtención de datos en el servidor
-  const products = await getAllProducts();
+  // FIX 2: Llamar al método a través del objeto productService
+  const products = await productService.getAllProducts();
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-10">
         Catálogo de Productos 👕
       </h1>
-      {/* Componente que verifica si es admin y muestra el botón de Crear Producto */} 
+      {/* Componente que verifica si es admin y muestra el botón de Crear Producto */}
       <AddProductAccess />
 
       {products.length === 0 ? (
@@ -22,7 +25,8 @@ export default async function Home() {
       ) : (
         // 2. Renderizado de la cuadrícula de productos
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {products.map((product) => (
+          {/* FIX 3: Tipar explícitamente el parámetro 'product' en el map */}
+          {products.map((product: Product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

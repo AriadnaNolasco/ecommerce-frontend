@@ -1,4 +1,4 @@
-import { getProductById } from '@/lib/product-service';
+import { productService } from '@/lib/product-service';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -17,7 +17,9 @@ interface ProductPageProps {
 // Componente de página de detalle (Server Component Asíncrono)
 export default async function ProductPage({ params }: ProductPageProps) {
     const productId = params.id;
-    const product = await getProductById(productId);
+
+    // FIX 2: Llamar a la función a través del objeto 'productService'
+    const product = await productService.getProductById(productId);
 
     if (!product) {
         // Si el producto no existe (404 del backend), usamos la función notFound de Next.js
@@ -29,7 +31,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         currency: 'PEN',
     }).format(product.price);
 
-    const stockTotal = product.stock_by_size.reduce((sum, s) => sum + s.stock, 0);
+    // FIX 3 & 4: Tipar explícitamente los parámetros del reduce
+    const stockTotal = product.stock_by_size.reduce((sum: number, s: ProductStock) => sum + s.stock, 0);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
