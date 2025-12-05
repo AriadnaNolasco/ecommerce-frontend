@@ -1,6 +1,6 @@
 import { authenticatedClient } from './api-client';
 import { CreateOrderRequest, CreateOrderResponse, MyOrdersResponse, OrderListItem } from '@/types/order';
-//import { Order } from '@/types/order-detail';
+import { Order } from '@/types/order-detail';
 
 export const orderService = {
     /**
@@ -29,18 +29,18 @@ export const orderService = {
     /**
    * Obtiene el detalle de un pedido por ID.
    */
-  getOrderDetail: async (orderId: string): Promise<Order | null> => {
-    try {
-        // La ruta para detalle es /orders/:id. La API verifica si pertenece al usuario o si es admin.
-        const response = await authenticatedClient.get<{ success: true, order: Order }>(`/orders/${orderId}`);
-        return response.data.order;
-    } catch (error) {
-        console.error('Error al obtener detalle de pedido:', error);
-        // Si hay un error 404 o 403, retorna null para que la página lo maneje.
-        if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 403)) {
-            return null;
+    getOrderDetail: async (orderId: string): Promise<Order | null> => {
+        try {
+            // La ruta para detalle es /orders/:id. La API verifica si pertenece al usuario o si es admin.
+            const response = await authenticatedClient.get<{ success: true, order: Order }>(`/orders/${orderId}`);
+            return response.data.order;
+        } catch (error) {
+            console.error('Error al obtener detalle de pedido:', error);
+            // Si hay un error 404 o 403, retorna null para que la página lo maneje.
+            if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 403)) {
+                return null;
+            }
+            throw error; // Propagar otros errores
         }
-        throw error; // Propagar otros errores
     }
-  }
 };

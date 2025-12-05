@@ -199,12 +199,59 @@ export default function AdminPage() {
                         </div>
                     </section>
 
-                    {/* SECCIÓN 3: ÓRDENES RECIENTES */}
+                    // SECCIÓN 3: ÓRDENES RECIENTES
                     <section>
                         <h2 className="text-3xl font-bold text-gray-800 mb-6">Órdenes Recientes ({stats?.recent_orders.length ?? 0})</h2>
-                        <div className="text-gray-500 bg-white p-4 rounded-xl shadow-lg">
-                            <p>La tabla de órdenes recientes se implementará en pasos posteriores.</p>
-                        </div>
+                        {stats?.recent_orders && stats.recent_orders.length > 0 ? (
+                            <div className="overflow-x-auto bg-white rounded-xl shadow-lg border">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Orden</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {stats.recent_orders.map((order) => (
+                                            <tr key={order.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
+                                                    {order.order_number}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{order.user_name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">
+                                                    {formatCurrency(order.total)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${order.status === 'entregado' ? 'bg-green-100 text-green-800' :
+                                                            order.status === 'enviado' ? 'bg-blue-100 text-blue-800' :
+                                                                order.status === 'cancelado' ? 'bg-red-100 text-red-800' :
+                                                                    'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                        {order.status.replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {new Date(order.created_at).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <Link href={`/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900">
+                                                        Ver
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-gray-500 bg-white p-4 rounded-xl shadow-lg border">
+                                <p>No se encontraron órdenes recientes.</p>
+                            </div>
+                        )}
                     </section>
 
                 </div>

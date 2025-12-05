@@ -6,6 +6,7 @@ import { ProductColor, ProductStock } from '@/types/product';
 import DeleteProductButton from '@/components/products/DeleteProductButton';
 import ProductForm from '@/components/products/ProductForm'; // Importar el formulario
 import { authService } from '@/lib/auth-service';
+import AdminEditWrapper from '@/components/products/AdminEditWrapper';
 
 interface ProductPageProps {
     params: {
@@ -109,6 +110,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </button>
                 </div>
             </div>
+
+            {/* Nuevo: Wrapper de Edición para Administradores */}
+            <AdminEditWrapper product={product} />
         </div>
     );
 }
