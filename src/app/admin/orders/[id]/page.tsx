@@ -1,31 +1,37 @@
 'use client';
 
-import { useState, useEffect, use } from 'react'; // Importar 'use' de React
+import { useState, useEffect } from 'react';
 import { orderService } from '@/lib/order-service';
 import { Order, OrderItem } from '@/types/order-detail';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // Importar use(params) en Next 15 es async, pero en client components params viene directo en props
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { ArrowLeft, MapPin, CreditCard, Package } from 'lucide-react';
 import Image from 'next/image';
 
+// Definición correcta de props para Client Component en Next.js
 interface OrderDetailPageProps {
-    params: Promise<{ id: string }>; // Params es una Promesa
+    params: Promise<{ id: string }>;
 }
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
-    // 1. Desempaquetar params usando React.use()
-    const { id: orderId } = use(params);
-
+    const [orderId, setOrderId] = useState<string>('');
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const router = useRouter();
-    
-    // Placeholder para imágenes si no cargan
     const placeholder = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000";
 
     useEffect(() => {
+        const unwrapParams = async () => {
+            const resolved = await params;
+            setOrderId(resolved.id);
+        };
+        unwrapParams();
+    }, [params]);
+
+    useEffect(() => {
+        if (!orderId) return;
         if (!authService.getToken()) {
             router.push('/login');
             return;
@@ -34,16 +40,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         const fetchDetail = async () => {
             setLoading(true);
             try {
-                // Ahora orderId es una cadena válida
                 const data = await orderService.getOrderDetail(orderId);
-                if (data) {
-                    setOrder(data);
-                } else {
-                    setError('Pedido no encontrado o no tienes permiso.');
-                }
+                if (data) setOrder(data);
+                else setError('Pedido no encontrado');
             } catch (err: any) {
-                console.error(err);
-                setError('Error al cargar el pedido.');
+                setError('Error al cargar el pedido');
             } finally {
                 setLoading(false);
             }
@@ -90,6 +91,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                     <div className="space-y-6">
                         {order.items.map((item: OrderItem) => (
                             <div key={item.id} className="flex gap-4">
+                                {/* Como el backend no guarda la foto en order_items, usamos placeholder o lógica futura */}
                                 <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden relative flex-shrink-0">
                                     <Image src={placeholder} alt={item.product_name} fill className="object-cover opacity-80" />
                                 </div>

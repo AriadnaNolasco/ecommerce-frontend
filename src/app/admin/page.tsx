@@ -4,258 +4,183 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 import { adminService } from '@/lib/admin-service';
-import { AdminUser, DashboardStats } from '@/types/admin';
+import { DashboardStats } from '@/types/admin';
 import Link from 'next/link';
-import { User } from '@/types/auth';
-
-// Hook simple para gestionar el estado de autenticación (Se puede mover a un archivo utils)
-const useAuth = () => {
-    const [user, setUser] = useState<{ role: string } | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const checkAuth = async () => {
-            const profile = await authService.getProfile();
-            if (profile) {
-                setUser({ role: profile.role });
-            }
-            setIsLoading(false);
-        };
-        checkAuth();
-    }, []);
-
-    return { user, isLoading };
-};
+import { 
+    DollarSign, ShoppingBag, Users, TrendingUp, 
+    Package, ClipboardList, UserCog, ArrowRight 
+} from 'lucide-react';
+import SalesChart from '@/components/admin/SalesChart';
 
 export default function AdminPage() {
-    const { user, isLoading } = useAuth();
     const router = useRouter();
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [users, setUsers] = useState<AdminUser[]>([]);
-    const [dataLoading, setDataLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
-    // 1. Lógica de Protección y Redirección
     useEffect(() => {
-        if (!isLoading) {
-            if (!user) {
-                // No autenticado -> Login
-                router.push('/login');
-            } else if (user.role !== 'admin') {
-                // Autenticado pero no admin -> Home
-                router.push('/');
-                alert('Acceso denegado: No tienes permisos de administrador.');
+        const init = async () => {
+            const user = await authService.getProfile();
+            if (user?.role !== 'admin') {
+                router.push('/'); // Si no es admin, fuera
+                return;
             }
-        }
-    }, [user, isLoading, router]);
+            try {
+                const data = await adminService.getDashboardStats();
+                setStats(data);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        init();
+    }, [router]);
 
-    // 2. Carga de Datos (Solo si es admin)
-    useEffect(() => {
-        if (user?.role === 'admin') {
-            const loadData = async () => {
-                setDataLoading(true);
-                try {
-                    // Carga simultánea de estadísticas y usuarios
-                    const [dashboardStats, allUsers] = await Promise.all([
-                        adminService.getDashboardStats(),
-                        adminService.getAllUsers(),
-                    ]);
+    if (loading) return null; // El loader global ya se encarga
 
-                    setStats(dashboardStats);
-                    setUsers(allUsers);
-                } catch (err: any) {
-                    console.error(err);
-                    // Si hay error en la petición (ej. token expirado/rol negado), redirigir
-                    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-                        authService.logout(); // Limpiar token y forzar login
-                    } else {
-                        setError('Error al cargar datos del dashboard. Verifica la conexión del backend.');
-                    }
-                } finally {
-                    setDataLoading(false);
-                }
-            };
-            loadData();
-        }
-    }, [user]);
-
-    // Pantalla de Carga Inicial (mientras se resuelve la autenticación)
-    if (isLoading || !user || user.role !== 'admin') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="text-xl text-gray-500">
-                    Cargando o verificando permisos...
-                </div>
-            </div>
-        );
-    }
-
-    // Helper para formatear moneda
-    const formatCurrency = (amount: number) =>
+    const formatCurrency = (amount: number) => 
         new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(amount);
 
-
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <h1 className="text-4xl font-extrabold text-red-600 mb-8 border-b pb-4">
-                Panel de Administración 📊
-            </h1>
-
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                    <span className="block sm:inline">{error}</span>
+        <div className="min-h-screen bg-gray-50 pb-20">
+            {/* Header Admin */}
+            <div className="bg-white border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    <h1 className="text-3xl font-serif font-bold text-gray-900">Dashboard General</h1>
+                    <p className="text-sm text-gray-500 mt-1">Bienvenido al panel de gestión de FINA PERÚ</p>
                 </div>
-            )}
+            </div>
 
-            {/* Indicador de Carga para los datos */}
-            {dataLoading ? (
-                <div className="text-center py-20">
-                    <p className="text-gray-500">Cargando estadísticas...</p>
-                </div>
-            ) : (
-                <div className="space-y-12">
-
-                    {/* SECCIÓN 1: ESTADÍSTICAS GENERALES */}
-                    <section>
-                        <h2 className="text-3xl font-bold text-gray-800 mb-6">Resumen Mensual</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                            {/* Tarjeta de Ventas Totales (total_sales) */}
-                            <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
-                                <p className="text-sm font-medium text-gray-500">Ventas del Mes</p>
-                                <p className="text-4xl font-extrabold text-blue-700 mt-1">
-                                    {stats?.total_sales !== undefined ? formatCurrency(stats.total_sales) : 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-2">Ventas de este mes (excl. cancelados)</p>
-                            </div>
-
-                            {/* Tarjeta de Total de Pedidos (total_orders) */}
-                            <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
-                                <p className="text-sm font-medium text-gray-500">Total Pedidos</p>
-                                <p className="text-4xl font-extrabold text-green-700 mt-1">
-                                    {stats?.total_orders?.toLocaleString() ?? 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-2">Total de pedidos realizados</p>
-                            </div>
-
-                            {/* Tarjeta de Usuarios Activos (total_users) */}
-                            <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
-                                <p className="text-sm font-medium text-gray-500">Usuarios Activos</p>
-                                <p className="text-4xl font-extrabold text-purple-700 mt-1">
-                                    {stats?.total_users?.toLocaleString() ?? 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-2">Usuarios con cuenta activa</p>
-                            </div>
+            <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+                
+                {/* 1. MÉTRICAS PRINCIPALES */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Ventas */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ventas del Mes</p>
+                            <h3 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats?.total_sales || 0)}</h3>
+                            <span className="text-xs text-green-600 flex items-center mt-2 font-medium">
+                                <TrendingUp size={14} className="mr-1" /> +12% vs mes anterior
+                            </span>
                         </div>
-                    </section>
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                            <DollarSign size={24} />
+                        </div>
+                    </div>
 
-                    {/* SECCIÓN 2: LISTA DE USUARIOS */}
-                    <section>
-                        <h2 className="text-3xl font-bold text-gray-800 mb-6">Gestión de Usuarios ({users.length})</h2>
+                    {/* Pedidos */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pedidos Totales</p>
+                            <h3 className="text-3xl font-bold text-gray-900 mt-2">{stats?.total_orders}</h3>
+                            <span className="text-xs text-gray-500 mt-2 block">Procesados exitosamente</span>
+                        </div>
+                        <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                            <ShoppingBag size={24} />
+                        </div>
+                    </div>
 
-                        <div className="overflow-x-auto bg-white rounded-xl shadow-lg">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Gastado</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    {/* Usuarios */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Usuarios</p>
+                            <h3 className="text-3xl font-bold text-gray-900 mt-2">{stats?.total_users}</h3>
+                            <span className="text-xs text-gray-500 mt-2 block">Clientes registrados</span>
+                        </div>
+                        <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
+                            <Users size={24} />
+                        </div>
+                    </div>
+                </section>
+
+                {/* 2. ACCESOS RÁPIDOS A GESTIÓN (Lo que pediste) */}
+                <section>
+                    <h2 className="text-lg font-bold text-gray-900 mb-6">Gestión de Tienda</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        {/* Gestión de Productos */}
+                        <Link href="/admin/products" className="group bg-white p-6 rounded-xl border border-gray-200 hover:border-black transition-all duration-300">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-gray-100 rounded-full group-hover:bg-black group-hover:text-white transition">
+                                    <Package size={24} />
+                                </div>
+                                <ArrowRight size={20} className="text-gray-300 group-hover:text-black" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Productos</h3>
+                            <p className="text-sm text-gray-500 mt-1">Crear, editar y gestionar inventario y tallas.</p>
+                        </Link>
+
+                        {/* Gestión de Pedidos (Próximamente implementaremos la vista completa) */}
+                        <Link href="/admin/orders" className="group bg-white p-6 rounded-xl border border-gray-200 hover:border-black transition-all duration-300">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-gray-100 rounded-full group-hover:bg-black group-hover:text-white transition">
+                                    <ClipboardList size={24} />
+                                </div>
+                                <ArrowRight size={20} className="text-gray-300 group-hover:text-black" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Pedidos</h3>
+                            <p className="text-sm text-gray-500 mt-1">Ver estados, cambiar a enviado/entregado.</p>
+                        </Link>
+
+                        {/* Gestión de Usuarios */}
+                        <Link href="/admin/users" className="group bg-white p-6 rounded-xl border border-gray-200 hover:border-black transition-all duration-300">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-gray-100 rounded-full group-hover:bg-black group-hover:text-white transition">
+                                    <UserCog size={24} />
+                                </div>
+                                <ArrowRight size={20} className="text-gray-300 group-hover:text-black" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Usuarios</h3>
+                            <p className="text-sm text-gray-500 mt-1">Gestionar roles y accesos de clientes.</p>
+                        </Link>
+                    </div>
+                </section>
+
+                {/* 3. GRÁFICOS */}
+                <section className="grid lg:grid-cols-2 gap-8">
+                    {stats?.sales_by_day && <SalesChart data={stats.sales_by_day} type="line" />}
+                    {stats?.sales_by_category && <SalesChart data={stats.sales_by_category} type="bar" />}
+                </section>
+
+                {/* 4. ÚLTIMOS PEDIDOS (Resumen rápido) */}
+                <section className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 className="font-bold text-gray-900">Últimos 5 Pedidos</h3>
+                        <Link href="/admin/orders" className="text-xs text-blue-600 hover:underline font-bold uppercase">Ver todos</Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                                <tr>
+                                    <th className="px-6 py-3">Nº Orden</th>
+                                    <th className="px-6 py-3">Cliente</th>
+                                    <th className="px-6 py-3">Estado</th>
+                                    <th className="px-6 py-3 text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {stats?.recent_orders?.map((order) => (
+                                    <tr key={order.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-medium text-blue-600">{order.order_number}</td>
+                                        <td className="px-6 py-4">{order.user_name}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                                                order.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                                order.status === 'entregado' ? 'bg-green-100 text-green-800' :
+                                                'bg-gray-100 text-gray-800'
+                                            }`}>
+                                                {order.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right font-bold">{formatCurrency(order.total)}</td>
                                     </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {users.map((userItem) => (
-                                        <tr key={userItem.id} className={userItem.role === 'admin' ? 'bg-red-50/50 hover:bg-red-100/50' : 'hover:bg-gray-50'}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{userItem.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                <Link href={`/admin/users/${userItem.id}`} className="text-indigo-600 hover:text-indigo-900 font-semibold">
-                                                    {userItem.name}
-                                                </Link>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{userItem.email}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-600 capitalize">{userItem.role}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${userItem.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                    {userItem.active ? 'Activo' : 'Inactivo'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                {/* Es necesario parsear a float para formatear la moneda */}
-                                                {formatCurrency(parseFloat(userItem.total_spent))}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {/* Enlace al detalle/edición */}
-                                                <Link href={`/admin/users/${userItem.id}`} className="text-indigo-600 hover:text-indigo-900">
-                                                    Editar
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-
-                    // SECCIÓN 3: ÓRDENES RECIENTES
-                    <section>
-                        <h2 className="text-3xl font-bold text-gray-800 mb-6">Órdenes Recientes ({stats?.recent_orders.length ?? 0})</h2>
-                        {stats?.recent_orders && stats.recent_orders.length > 0 ? (
-                            <div className="overflow-x-auto bg-white rounded-xl shadow-lg border">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Orden</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {stats.recent_orders.map((order) => (
-                                            <tr key={order.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
-                                                    {order.order_number}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{order.user_name}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">
-                                                    {formatCurrency(order.total)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${order.status === 'entregado' ? 'bg-green-100 text-green-800' :
-                                                            order.status === 'enviado' ? 'bg-blue-100 text-blue-800' :
-                                                                order.status === 'cancelado' ? 'bg-red-100 text-red-800' :
-                                                                    'bg-yellow-100 text-yellow-800'
-                                                        }`}>
-                                                        {order.status.replace('_', ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {new Date(order.created_at).toLocaleDateString()}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <Link href={`/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900">
-                                                        Ver
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="text-gray-500 bg-white p-4 rounded-xl shadow-lg border">
-                                <p>No se encontraron órdenes recientes.</p>
-                            </div>
-                        )}
-                    </section>
-
-                </div>
-            )}
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </div>
     );
 }

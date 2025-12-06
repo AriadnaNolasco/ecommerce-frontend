@@ -58,4 +58,14 @@ export const adminService = {
             throw new Error(error.response?.data?.message || 'Error al cambiar estado.');
         }
     },
+
+    // 6. Eliminar usuario (DELETE /users/:id) - NUEVA FUNCIÓN
+    deleteUser: async (userId: string | number): Promise<{ success: boolean, message: string }> => {
+        try {
+            const response = await authenticatedClient.delete<{ success: boolean, message: string }>(`/users/${userId}`);
+            return response.data;
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Error al eliminar usuario.');
+        }
+    },
 };

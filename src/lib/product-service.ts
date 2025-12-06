@@ -16,33 +16,45 @@ export interface ProductCreationResponse { success: boolean; message: string; pr
 export const productService = {
 
     /**
-     * Obtiene todos los productos. Optimizada para Server Components con ISR/cache.
+     * Obtiene todos los productos.
+     * Modificado para aceptar filtros (searchParams) de forma segura y evitar caché (no-store).
      */
-    getAllProducts: async function (): Promise<Product[]> {
+    getAllProducts: async function (searchParams?: { [key: string]: string }): Promise<Product[]> {
         try {
-            // Usamos fetch nativo con opciones de Next.js para revalidación (ISR) [cite: 388]
-            const res = await fetch(`${API_URL}/products`, {
+            // Creamos una instancia vacía de URLSearchParams
+            const params = new URLSearchParams();
+
+            // Agregamos manualmente solo si existen valores válidos y son strings
+            if (searchParams) {
+                Object.keys(searchParams).forEach(key => {
+                    const value = searchParams[key];
+                    if (value && typeof value === 'string') {
+                        params.append(key, value);
+                    }
+                });
+            }
+            
+            const queryString = params.toString();
+            // Construimos la URL final asegurando que API_URL esté definido
+            const baseUrl = API_URL || ''; 
+            const url = `${baseUrl}/products${queryString ? `?${queryString}` : ''}`;
+            
+            console.log("Fetching URL:", url); // Para depuración en servidor
+
+            const res = await fetch(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                // Revalidar los datos cada 60 minutos (3600 segundos)
-                next: {
-                    revalidate: 3600
-                },
+                headers: { 'Content-Type': 'application/json' },
+                // 'no-store' asegura que siempre obtengamos datos frescos al filtrar
+                cache: 'no-store', 
             });
 
-            if (!res.ok) {
-                // Si la respuesta no es 200-299, lanza un error
-                console.error(`Error al obtener productos: ${res.status} ${res.statusText}`);
-                throw new Error('Error al cargar el catálogo de productos.');
-            }
-
+            if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+            
             const data: ProductsResponse = await res.json();
             return data.products;
         } catch (error) {
-            console.error('Error en fetch de productos:', error);
-            // En caso de error, retorna un array vacío para no romper la UI
+            console.error('Error fetching products:', error);
+            // Retornamos array vacío para no romper la UI si falla el fetch
             return [];
         }
     },
