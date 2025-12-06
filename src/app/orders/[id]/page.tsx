@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react'; // Importar 'use' de React
+import { useState, useEffect } from 'react';
 import { orderService } from '@/lib/order-service';
 import { Order, OrderItem } from '@/types/order-detail';
 import { useRouter } from 'next/navigation';
@@ -15,42 +15,44 @@ interface OrderDetailPageProps {
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     // 1. Desempaquetar params usando React.use()
-    const { id: orderId } = use(params);
-
+    const [orderId, setOrderId] = useState<string>('');
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const router = useRouter();
-    
+
     // Placeholder para imágenes si no cargan
     const placeholder = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000";
 
     useEffect(() => {
-        if (!authService.getToken()) {
-            router.push('/login');
-            return;
+        // [5.1] Prevenir ejecución si orderId no se ha resuelto aún
+        if (!orderId) return; ///page.tsx]
+
+        if (!authService.getToken()) { ///page.tsx]
+            router.push('/login'); ///page.tsx]
+            return; ///page.tsx]
         }
 
-        const fetchDetail = async () => {
-            setLoading(true);
+        const fetchDetail = async () => { ///page.tsx]
+            setLoading(true); ///page.tsx]
             try {
                 // Ahora orderId es una cadena válida
-                const data = await orderService.getOrderDetail(orderId);
+                const data = await orderService.getOrderDetail(orderId); ///page.tsx]
                 if (data) {
-                    setOrder(data);
+                    setOrder(data); ///page.tsx]
                 } else {
-                    setError('Pedido no encontrado o no tienes permiso.');
+                    setError('Pedido no encontrado o no tienes permiso.'); ///page.tsx]
                 }
             } catch (err: any) {
-                console.error(err);
-                setError('Error al cargar el pedido.');
+                console.error(err); ///page.tsx]
+                setError('Error al cargar el pedido.'); ///page.tsx]
             } finally {
-                setLoading(false);
+                setLoading(false); ///page.tsx]
             }
         };
 
-        fetchDetail();
-    }, [orderId, router]);
+        fetchDetail(); ///page.tsx]
+    }, [orderId, router]); ///page.tsx]
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(amount);
@@ -75,15 +77,14 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                     <h1 className="text-2xl font-serif font-bold text-gray-900">Pedido #{order.order_number}</h1>
                     <p className="text-sm text-gray-500 mt-1">Realizado el {new Date(order.created_at).toLocaleDateString()}</p>
                 </div>
-                <span className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider border ${
-                    order.status === 'entregado' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-700 border-gray-200'
-                }`}>
+                <span className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider border ${order.status === 'entregado' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-700 border-gray-200'
+                    }`}>
                     {order.status.replace('_', ' ')}
                 </span>
             </div>
 
             <div className="grid md:grid-cols-3 gap-12">
-                
+
                 {/* Columna Izquierda: Productos */}
                 <div className="md:col-span-2 space-y-8">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-gray-900 border-b border-gray-100 pb-2">Productos ({order.items.length})</h2>
@@ -145,9 +146,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         </h2>
                         <div className="text-sm text-gray-600">
                             <p className="capitalize mb-1">{order.payment_method}</p>
-                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                                order.payment_status === 'aprobado' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${order.payment_status === 'aprobado' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
                                 {order.payment_status}
                             </span>
                         </div>

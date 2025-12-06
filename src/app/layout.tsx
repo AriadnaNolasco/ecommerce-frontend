@@ -3,9 +3,10 @@ import { Inter } from 'next/font/google';
 import "./globals.css";
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { CartProvider } from '@/context/CartContext'; 
+import { CartProvider } from '@/context/CartContext';
 import { WishlistProvider } from '@/context/WishlistContext'; // <--- IMPORTANTE
 import { Toaster } from 'sonner';
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <WishlistProvider> {/* <--- AQUÍ DEBE ESTAR EL ENCHUFE */}
             <div id="root-app">
-              <Navbar />
+              <Suspense fallback={null}>
+                <Navbar />
+              </Suspense>
               <main className="min-h-[80vh]">{children}</main>
               <Footer />
             </div>
